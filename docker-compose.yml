@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15
+    container_name: github-hotspot-db
+    environment:
+      POSTGRES_DB: github_hotspot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hotspot-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: github-hotspot-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - hotspot-network
+
+  # .NET 后端 API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: github-hotspot-backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=github_hotspot;Username=postgres;Password=password
+      - ConnectionStrings__Redis=redis:6379
+      - GitHub__Token=${GITHUB_TOKEN}
+    ports:
+      - "5000:80"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - hotspot-network
+
+  # React 前端
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: github-hotspot-frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - hotspot-network
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+
+volumes:
+  postgres_data:
+
+networks:
+  hotspot-network:
+    driver: bridge
