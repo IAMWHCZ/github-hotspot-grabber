@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Repository } from '../../types';
 import './RepositoryCard.css';
 
@@ -8,6 +9,8 @@ interface RepositoryCardProps {
 }
 
 const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository, rank }) => {
+  const { t, i18n } = useTranslation();
+  
   const formatNumber = (num: number): string => {
     if (num >= 1000) {
       return (num / 1000).toFixed(1) + 'k';
@@ -17,7 +20,8 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository, rank }) => 
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN');
+    const locale = i18n.language === 'zh' ? 'zh-CN' : 'en-US';
+    return date.toLocaleDateString(locale);
   };
 
   const getScoreColor = (score: number): string => {
@@ -44,7 +48,7 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository, rank }) => 
         </h3>
         
         <p className="repo-description">
-          {repository.description || '暂无描述'}
+          {repository.description || t('repository.noDescription')}
         </p>
         
         <div className="repo-stats">
@@ -67,7 +71,7 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repository, rank }) => 
             <span className="language-tag">{repository.language}</span>
           )}
           <span className="update-date">
-            更新于 {formatDate(repository.updatedAt)}
+            {t('repository.updatedAt')}: {formatDate(repository.updatedAt)}
           </span>
         </div>
       </div>

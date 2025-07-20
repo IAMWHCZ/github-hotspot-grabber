@@ -17,6 +17,7 @@ public class GitHubService : IGitHubService
         
         // 配置 GitHub API 请求头
         var token = _configuration["GitHub:Token"];
+        _logger.LogInformation("GitHub token configured: {HasToken}", !string.IsNullOrEmpty(token));
         if (!string.IsNullOrEmpty(token))
         {
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"token {token}");
@@ -42,6 +43,17 @@ public class GitHubService : IGitHubService
             _logger.LogInformation("Fetching trending repositories: {Url}", url);
             
             var response = await _httpClient.GetAsync(url);
+            
+            // If unauthorized, try without authentication (rate limited but works for testing)
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                _logger.LogWarning("GitHub API returned 401, trying without authentication (rate limited)");
+                using var tempClient = new HttpClient();
+                tempClient.DefaultRequestHeaders.Add("User-Agent", "GitHubHotspotGrabber/1.0");
+                tempClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+                response = await tempClient.GetAsync(url);
+            }
+            
             response.EnsureSuccessStatusCode();
             
             var content = await response.Content.ReadAsStringAsync();

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Repository, TrendingRequest, TrendingResponse, LanguageStats } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

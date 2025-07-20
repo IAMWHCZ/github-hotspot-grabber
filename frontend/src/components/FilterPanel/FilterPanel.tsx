@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FilterOptions, TimePeriod } from '../../types';
 import { repositoryApi } from '../../services/api';
+import WeightConfig from '../WeightConfig/WeightConfig';
 import './FilterPanel.css';
 
 interface FilterPanelProps {
@@ -16,7 +18,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   onRefresh, 
   loading 
 }) => {
+  const { t } = useTranslation();
   const [languages, setLanguages] = useState<string[]>([]);
+  const [showWeightConfig, setShowWeightConfig] = useState(false);
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -44,30 +48,32 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const getTimePeriodText = (period: TimePeriod): string => {
     switch (period) {
-      case TimePeriod.Daily: return '今日';
-      case TimePeriod.Weekly: return '本周';
-      case TimePeriod.Monthly: return '本月';
-      default: return '本周';
+      case TimePeriod.Daily: return t('filters.daily');
+      case TimePeriod.Weekly: return t('filters.weekly');
+      case TimePeriod.Monthly: return t('filters.monthly');
+      default: return t('filters.weekly');
     }
   };
 
   return (
     <div className="filter-panel">
       <div className="filter-group">
-        <label>编程语言:</label>
+        <label>{t('filters.language')}:</label>
         <select 
           value={filters.language} 
           onChange={(e) => handleLanguageChange(e.target.value)}
           disabled={loading}
         >
           {languages.map(lang => (
-            <option key={lang} value={lang}>{lang}</option>
+            <option key={lang} value={lang}>
+              {lang === 'All Languages' ? t('filters.allLanguages') : lang}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="filter-group">
-        <label>时间范围:</label>
+        <label>{t('filters.timePeriod')}:</label>
         <div className="time-period-buttons">
           {[TimePeriod.Daily, TimePeriod.Weekly, TimePeriod.Monthly].map(period => (
             <button
@@ -83,7 +89,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       </div>
 
       <div className="filter-group">
-        <label>显示数量:</label>
+        <label>{t('common.results')}:</label>
         <select 
           value={filters.limit} 
           onChange={(e) => handleLimitChange(Number(e.target.value))}
@@ -97,13 +103,30 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
       <div className="filter-actions">
         <button 
+          className="btn btn-secondary" 
+          onClick={() => setShowWeightConfig(true)}
+          disabled={loading}
+        >
+          ⚙️ {t('weights.configure')}
+        </button>
+        <button 
           className="btn btn-primary" 
           onClick={onRefresh}
           disabled={loading}
         >
-          {loading ? '刷新中...' : '刷新数据'}
+          {loading ? t('common.loading') : t('common.refresh')}
         </button>
       </div>
+
+      {showWeightConfig && (
+        <WeightConfig
+          onWeightChange={() => {
+            // 权重更新后可以触发数据刷新
+            onRefresh();
+          }}
+          onClose={() => setShowWeightConfig(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,37 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { Repository, TimePeriod, FilterOptions } from '../../types';
-import { repositoryApi } from '../../services/api';
-import RepositoryList from '../../components/RepositoryList/RepositoryList';
-import FilterPanel from '../../components/FilterPanel/FilterPanel';
-import './HomePage.css';
+import React, { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
+import { Repository, TimePeriod, FilterOptions } from "../../types";
+import { repositoryApi } from "../../services/api";
+import "./HomePage.css";
+import FilterPanel from "../../components/FilterPanel/FilterPanel";
+import RepositoryList from "../../components/RepositoryList/RepositoryList";
 
 const HomePage: React.FC = () => {
+  const { t } = useTranslation();
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
-    language: 'All Languages',
+    language: "All Languages",
     timePeriod: TimePeriod.Weekly,
-    limit: 50
+    limit: 50,
   });
 
   const fetchRepositories = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const request = {
-        language: filters.language === 'All Languages' ? undefined : filters.language,
+        language:
+          filters.language === "All Languages" ? undefined : filters.language,
         timePeriod: filters.timePeriod,
         limit: filters.limit,
-        page: 1
+        page: 1,
       };
 
       const response = await repositoryApi.getTrending(request);
       setRepositories(response.repositories);
     } catch (err) {
-      setError('获取数据失败，请稍后重试');
-      console.error('Error fetching repositories:', err);
+      setError(t('messages.fetchError'));
+      console.error("Error fetching repositories:", err);
     } finally {
       setLoading(false);
     }
@@ -52,27 +55,20 @@ const HomePage: React.FC = () => {
   return (
     <div className="home-page">
       <div className="page-header">
-        <h1>🔥 GitHub 热门仓库</h1>
-        <p>发现最新最热门的开源项目</p>
+        <h1>🔥 {t('header.title')}</h1>
+        <p>{t('header.subtitle')}</p>
       </div>
-
-      <FilterPanel 
+      <FilterPanel
         filters={filters}
         onFilterChange={handleFilterChange}
         onRefresh={handleRefresh}
         loading={loading}
       />
 
-      {error && (
-        <div className="error">
-          {error}
-        </div>
-      )}
+      {error && <div className="error">{error}</div>}
 
       {loading ? (
-        <div className="loading">
-          正在加载热门仓库...
-        </div>
+        <div className="loading">{t('common.loading')}</div>
       ) : (
         <RepositoryList repositories={repositories} />
       )}

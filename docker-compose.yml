@@ -37,7 +37,7 @@ services:
       - ConnectionStrings__Redis=redis:6379
       - GitHub__Token=${GITHUB_TOKEN}
     ports:
-      - "5000:80"
+      - "5001:80"
     depends_on:
       - postgres
       - redis
@@ -51,7 +51,7 @@ services:
       dockerfile: Dockerfile
     container_name: github-hotspot-frontend
     environment:
-      - REACT_APP_API_URL=http://localhost:5000/api
+      - REACT_APP_API_URL=http://localhost:5001/api
     ports:
       - "3000:3000"
     depends_on:

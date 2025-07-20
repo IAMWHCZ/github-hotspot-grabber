@@ -49,6 +49,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Configure URLs
+app.Urls.Add("http://0.0.0.0:80");
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

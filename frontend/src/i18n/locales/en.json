@@ -1,0 +1,84 @@
+{
+  "header": {
+    "title": "GitHub Hotspot Grabber",
+    "subtitle": "Discover trending repositories"
+  },
+  "navigation": {
+    "home": "Home",
+    "trending": "Trending",
+    "search": "Search"
+  },
+  "filters": {
+    "title": "Filters",
+    "language": "Programming Language",
+    "allLanguages": "All Languages",
+    "timePeriod": "Time Period",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "sortBy": "Sort By",
+    "stars": "Stars",
+    "forks": "Forks",
+    "hotspotScore": "Hotspot Score",
+    "updated": "Last Updated",
+    "apply": "Apply Filters",
+    "reset": "Reset"
+  },
+  "repository": {
+    "stars": "Stars",
+    "forks": "Forks",
+    "issues": "Issues",
+    "language": "Language",
+    "owner": "Owner",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "pushedAt": "Last Push",
+    "hotspotScore": "Hotspot Score",
+    "viewOnGitHub": "View on GitHub",
+    "clone": "Clone",
+    "description": "Description",
+    "noDescription": "No description available"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "search": "Search",
+    "searchPlaceholder": "Search repositories...",
+    "noResults": "No results found",
+    "loadMore": "Load More",
+    "page": "Page",
+    "of": "of",
+    "total": "Total",
+    "results": "results"
+  },
+  "messages": {
+    "fetchError": "Failed to fetch repositories. Please try again.",
+    "networkError": "Network error. Please check your connection.",
+    "serverError": "Server error. Please try again later.",
+    "noRepositories": "No repositories found for the selected criteria."
+  },
+  "language": {
+    "switch": "Language",
+    "english": "English",
+    "chinese": "中文"
+  },
+  "weights": {
+    "title": "Weight Configuration",
+    "description": "Adjust the weights for different factors in calculating hotspot scores. All weights should sum to 1.0.",
+    "stars": "Stars Weight",
+    "forks": "Forks Weight",
+    "issues": "Issues Weight",
+    "freshness": "Freshness Weight",
+    "activity": "Activity Weight",
+    "total": "Total",
+    "shouldBeOne": "Should be 1.0",
+    "normalize": "Normalize",
+    "reset": "Reset",
+    "save": "Save",
+    "weightsUpdated": "Weights updated successfully!",
+    "updateError": "Failed to update weights",
+    "configure": "Configure Weights"
+  }
+}

@@ -10,10 +10,12 @@ public class RankingService : IRankingService
     private readonly IConfiguration _configuration;
     private readonly ILogger<RankingService> _logger;
 
-    // 默认权重配置
+    // 权重配置
     private readonly double _starWeight;
     private readonly double _forkWeight;
-    private readonly double _commitWeight;
+    private readonly double _issueWeight;
+    private readonly double _freshnessWeight;
+    private readonly double _activityWeight;
 
     public RankingService(ApplicationDbContext context, IConfiguration configuration, ILogger<RankingService> logger)
     {
@@ -22,9 +24,11 @@ public class RankingService : IRankingService
         _logger = logger;
 
         // 从配置读取权重，如果没有配置则使用默认值
-        _starWeight = _configuration.GetValue<double>("RankingWeights:Stars", 0.4);
-        _forkWeight = _configuration.GetValue<double>("RankingWeights:Forks", 0.3);
-        _commitWeight = _configuration.GetValue<double>("RankingWeights:Commits", 0.3);
+        _starWeight = _configuration.GetValue<double>("RankingWeights:Stars", 0.35);
+        _forkWeight = _configuration.GetValue<double>("RankingWeights:Forks", 0.25);
+        _issueWeight = _configuration.GetValue<double>("RankingWeights:Issues", 0.15);
+        _freshnessWeight = _configuration.GetValue<double>("RankingWeights:Freshness", 0.15);
+        _activityWeight = _configuration.GetValue<double>("RankingWeights:Activity", 0.10);
     }
 
     public async Task<List<Repository>> CalculateHotspotScoresAsync(List<Repository> repositories)
@@ -42,24 +46,36 @@ public class RankingService : IRankingService
     {
         try
         {
-            // 计算时间因子（越新的项目权重越高）
+            // 计算时间因子
             var daysSinceCreated = Math.Max(1, repository.DaysSinceCreated);
             var daysSinceLastPush = Math.Max(1, repository.DaysSinceLastPush);
 
-            // 计算各项指标的速度
+            // 1. Stars 权重 - 基于星标增长速度
             var starVelocity = (double)repository.Stars / daysSinceCreated;
+            var starScore = Math.Log10(starVelocity + 1);
+
+            // 2. Forks 权重 - 基于分叉增长速度
             var forkVelocity = (double)repository.Forks / daysSinceCreated;
-            
-            // 活跃度因子（最近推送越频繁分数越高）
-            var activityFactor = Math.Max(0.1, 1.0 / daysSinceLastPush);
+            var forkScore = Math.Log10(forkVelocity + 1);
+
+            // 3. Issues 权重 - 活跃的 issue 讨论表明项目受关注
+            var issueScore = Math.Log10(repository.OpenIssues + 1) / daysSinceCreated;
+
+            // 4. Freshness 权重 - 项目新鲜度（越新越有潜力）
+            var freshnessScore = Math.Max(0.1, 1.0 / Math.Sqrt(daysSinceCreated));
+
+            // 5. Activity 权重 - 最近活跃度（最近推送越频繁分数越高）
+            var activityScore = Math.Max(0.1, 1.0 / daysSinceLastPush);
 
             // 综合评分
-            var score = (_starWeight * starVelocity) + 
-                       (_forkWeight * forkVelocity) + 
-                       (_commitWeight * activityFactor);
+            var score = (_starWeight * starScore) + 
+                       (_forkWeight * forkScore) + 
+                       (_issueWeight * issueScore) +
+                       (_freshnessWeight * freshnessScore) +
+                       (_activityWeight * activityScore);
 
-            // 对数缩放以避免极值
-            return Math.Log10(score + 1) * 10;
+            // 缩放到合理范围
+            return score * 10;
         }
         catch (Exception ex)
         {

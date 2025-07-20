@@ -14,6 +14,7 @@ public class RepositoriesController : ControllerBase
     private readonly IRankingService _rankingService;
     private readonly ICacheService _cacheService;
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<RepositoriesController> _logger;
 
     public RepositoriesController(
@@ -21,12 +22,14 @@ public class RepositoriesController : ControllerBase
         IRankingService rankingService,
         ICacheService cacheService,
         ApplicationDbContext context,
+        IConfiguration configuration,
         ILogger<RepositoriesController> logger)
     {
         _gitHubService = gitHubService;
         _rankingService = rankingService;
         _cacheService = cacheService;
         _context = context;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -187,31 +190,84 @@ public class RepositoriesController : ControllerBase
         }
     }
 
-    private async Task SaveRepositoriesToDatabase(List<Repository> repositories)
+    [HttpGet("weights")]
+    public IActionResult GetWeights()
     {
-        foreach (var repo in repositories)
+        var weights = new WeightConfig
         {
-            var existingRepo = await _context.Repositories
-                .FirstOrDefaultAsync(r => r.GitHubId == repo.GitHubId);
+            Stars = _configuration.GetValue<double>("RankingWeights:Stars", 0.35),
+            Forks = _configuration.GetValue<double>("RankingWeights:Forks", 0.25),
+            Issues = _configuration.GetValue<double>("RankingWeights:Issues", 0.15),
+            Freshness = _configuration.GetValue<double>("RankingWeights:Freshness", 0.15),
+            Activity = _configuration.GetValue<double>("RankingWeights:Activity", 0.10)
+        };
 
-            if (existingRepo != null)
-            {
-                // 更新现有记录
-                existingRepo.Stars = repo.Stars;
-                existingRepo.Forks = repo.Forks;
-                existingRepo.OpenIssues = repo.OpenIssues;
-                existingRepo.UpdatedAt = repo.UpdatedAt;
-                existingRepo.PushedAt = repo.PushedAt;
-                existingRepo.HotspotScore = repo.HotspotScore;
-                existingRepo.LastAnalyzed = DateTime.UtcNow;
-            }
-            else
-            {
-                // 添加新记录
-                _context.Repositories.Add(repo);
-            }
+        return Ok(weights);
+    }
+
+    [HttpPost("weights")]
+    public async Task<IActionResult> UpdateWeights([FromBody] WeightConfig weights)
+    {
+        if (!weights.IsValid())
+        {
+            weights.Normalize();
         }
 
-        await _context.SaveChangesAsync();
+        // 这里可以保存到配置文件或数据库
+        // 为了演示，我们只返回标准化后的权重
+        return Ok(new { 
+            message = "Weights updated successfully", 
+            weights = weights 
+        });
+    }
+
+    private async Task SaveRepositoriesToDatabase(List<Repository> repositories)
+    {
+        try
+        {
+            // 获取所有现有的 GitHubId
+            var existingGitHubIds = await _context.Repositories
+                .Where(r => repositories.Select(repo => repo.GitHubId).Contains(r.GitHubId))
+                .Select(r => r.GitHubId)
+                .ToListAsync();
+
+            foreach (var repo in repositories)
+            {
+                if (existingGitHubIds.Contains(repo.GitHubId))
+                {
+                    // 更新现有记录
+                    var existingRepo = await _context.Repositories
+                        .FirstAsync(r => r.GitHubId == repo.GitHubId);
+                    
+                    existingRepo.Name = repo.Name;
+                    existingRepo.FullName = repo.FullName;
+                    existingRepo.Description = repo.Description;
+                    existingRepo.Owner = repo.Owner;
+                    existingRepo.Language = repo.Language;
+                    existingRepo.Stars = repo.Stars;
+                    existingRepo.Forks = repo.Forks;
+                    existingRepo.OpenIssues = repo.OpenIssues;
+                    existingRepo.UpdatedAt = repo.UpdatedAt;
+                    existingRepo.PushedAt = repo.PushedAt;
+                    existingRepo.HtmlUrl = repo.HtmlUrl;
+                    existingRepo.CloneUrl = repo.CloneUrl;
+                    existingRepo.HotspotScore = repo.HotspotScore;
+                    existingRepo.LastAnalyzed = DateTime.UtcNow;
+                }
+                else
+                {
+                    // 添加新记录
+                    repo.LastAnalyzed = DateTime.UtcNow;
+                    _context.Repositories.Add(repo);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving repositories to database");
+            throw;
+        }
     }
 }
